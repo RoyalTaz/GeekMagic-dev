@@ -19,7 +19,6 @@ struct Settings {
     char lastImage[64];
     long gmtOffset;            // GMT offset in seconds
     bool valid;
-    uint32_t crc;              // CRC32 checksum for data integrity
 
     // Automatic brightness settings
     bool autoBrightness;
@@ -28,6 +27,8 @@ struct Settings {
     float luxMax;
     uint8_t brightnessMin;
     uint8_t brightnessMax;
+
+    uint32_t crc;              // CRC32 checksum for data integrity (must remain last)
 };
 
 // Boot failure tracking structure (separate from settings)
