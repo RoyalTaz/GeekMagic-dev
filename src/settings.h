@@ -46,7 +46,7 @@ struct PowerCycleCounter {
 void settingsInit();
 void settingsLoad(Settings &settings);
 void settingsSave(const Settings &settings);
-void settingsReset(Settings &settings)
+void settingsReset(Settings &settings);
 uint32_t settingsCalculateCRC(const Settings &settings);
 bool settingsValidate(const Settings &settings);
 
