@@ -20,6 +20,14 @@ struct Settings {
     long gmtOffset;            // GMT offset in seconds
     bool valid;
     uint32_t crc;              // CRC32 checksum for data integrity
+
+    // Automatic brightness settings
+    bool autoBrightness;
+    float luxOff;
+    float luxOn;
+    float luxMax;
+    uint8_t brightnessMin;
+    uint8_t brightnessMax;
 };
 
 // Boot failure tracking structure (separate from settings)
