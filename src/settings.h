@@ -5,7 +5,7 @@
 #include <EEPROM.h>
 
 // Firmware version - increment when Settings structure changes
-#define FIRMWARE_VERSION 2
+#define FIRMWARE_VERSION 3
 
 // Semantic version string (replaced by GitHub Action during release builds)
 #ifndef FIRMWARE_VERSION_STRING
@@ -46,7 +46,28 @@ struct PowerCycleCounter {
 void settingsInit();
 void settingsLoad(Settings &settings);
 void settingsSave(const Settings &settings);
-void settingsReset(Settings &settings);
+void settingsReset(Settings &settings) {
+    Serial.println(F("Resetting settings to factory defaults"));
+
+    memset(&settings, 0, sizeof(Settings));
+
+    settings.version = FIRMWARE_VERSION;
+    settings.brightness = 70;
+    settings.theme = 0;
+    settings.lastImage[0] = '\0';
+    settings.gmtOffset = 3600;
+    settings.valid = true;
+
+    // Automatic brightness defaults
+    settings.autoBrightness = true;
+    settings.luxOff = 2.0f;
+    settings.luxOn = 5.0f;
+    settings.luxMax = 500.0f;
+    settings.brightnessMin = 5;
+    settings.brightnessMax = 80;
+
+    settings.crc = settingsCalculateCRC(settings);
+}
 uint32_t settingsCalculateCRC(const Settings &settings);
 bool settingsValidate(const Settings &settings);
 
