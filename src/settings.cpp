@@ -1,4 +1,5 @@
 #include "settings.h"
+#include <string.h>
 
 #define EEPROM_SIZE 512
 #define SETTINGS_MAGIC 0xCAFE
@@ -65,6 +66,20 @@ bool settingsValidate(const Settings &settings) {
         return false;
     }
 
+    if (settings.luxOff < 0 ||
+        settings.luxOn <= settings.luxOff ||
+        settings.luxMax <= settings.luxOn) {
+        Serial.println(F("Invalid lux thresholds"));
+        return false;
+    }
+
+    if (settings.brightnessMin > 100 ||
+        settings.brightnessMax > 100 ||
+        settings.brightnessMin > settings.brightnessMax) {
+        Serial.println(F("Invalid brightness limits"));
+        return false;
+    }
+    
     return true;
 }
 
@@ -72,12 +87,23 @@ bool settingsValidate(const Settings &settings) {
 void settingsReset(Settings &settings) {
     Serial.println(F("Resetting settings to factory defaults"));
 
+    memset(&settings, 0, sizeof(Settings));
+
     settings.version = FIRMWARE_VERSION;
     settings.brightness = 70;
     settings.theme = 0;
     settings.lastImage[0] = '\0';
-    settings.gmtOffset = 3600;      // Default to +1 hour (CET)
+    settings.gmtOffset = 3600;
     settings.valid = true;
+
+    // Automatic brightness defaults
+    settings.autoBrightness = true;
+    settings.luxOff = 2.0f;
+    settings.luxOn = 5.0f;
+    settings.luxMax = 500.0f;
+    settings.brightnessMin = 5;
+    settings.brightnessMax = 80;
+
     settings.crc = settingsCalculateCRC(settings);
 }
 
