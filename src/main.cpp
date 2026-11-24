@@ -481,19 +481,35 @@ void setupFilesystem() {
 
 void updateAutomaticBrightness() {
 
-    // Automatic mode disabled: leave manual brightness untouched
-    if (!appSettings.autoBrightness) {
-        return;
-    }
-
-    // Sensor unavailable or invalid reading
-    if (!vemlAvailable || currentLux < 0.0f) {
-        return;
-    }
-
+    static bool wasAutoMode = false;
     static bool screenIsOn = true;
 
-    // Hysteresis: avoid repeated ON/OFF switching
+    // Return to manual brightness when automatic mode is disabled
+    // or when the sensor is unavailable
+    if (!appSettings.autoBrightness ||
+        !vemlAvailable || currentLux < 0.0f) {
+
+        if (wasAutoMode) {
+            currentBrightness = appSettings.brightness;
+            displaySetBrightness(currentBrightness);
+
+            Serial.println(F("Returning to manual brightness"));
+
+            wasAutoMode = false;
+        }
+
+        return;
+    }
+
+    // Initialize automatic mode
+    if (!wasAutoMode) {
+        screenIsOn = currentLux > appSettings.luxOff;
+        wasAutoMode = true;
+
+        Serial.println(F("Automatic brightness enabled"));
+    }
+
+    // Hysteresis
     if (screenIsOn && currentLux <= appSettings.luxOff) {
         screenIsOn = false;
         Serial.println(F("Automatic brightness: Screen OFF"));
@@ -526,11 +542,9 @@ void updateAutomaticBrightness() {
 
     targetBrightness = constrain(targetBrightness, 0, 100);
 
-    // Apply only when brightness changes
     if (targetBrightness != currentBrightness) {
 
         currentBrightness = targetBrightness;
-
         displaySetBrightness(targetBrightness);
 
         Serial.printf(
