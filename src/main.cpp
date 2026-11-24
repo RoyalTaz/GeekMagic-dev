@@ -883,21 +883,21 @@ void loop() {
         lastDisplayUpdate = millis();
     }
 
-// Read ambient light every 2 seconds
-if (vemlAvailable && millis() - lastLuxRead >= 2000) {
-    lastLuxRead = millis();
-    float lux = veml.readLux();
-    if (isfinite(lux) && lux >= 0.0f) {
-        currentLux = lux;
-        Serial.printf("Ambient light: %.2f lux\n", currentLux);
-    } else {
-        currentLux = -1.0f;
-        Serial.println(F("Invalid VEML7700 reading"));
+    // Read ambient light every 2 seconds
+    if (vemlAvailable && millis() - lastLuxRead >= 2000) {
+        lastLuxRead = millis();
+        float lux = veml.readLux();
+        if (isfinite(lux) && lux >= 0.0f) {
+            currentLux = lux;
+            Serial.printf("Ambient light: %.2f lux\n", currentLux);
+        } else {
+            currentLux = -1.0f;
+            Serial.println(F("Invalid VEML7700 reading"));
+        }
     }
-}
 
-// Update automatic screen brightness
-updateAutomaticBrightness();
+    // Update automatic screen brightness
+    updateAutomaticBrightness();
     
     yield();
 }
