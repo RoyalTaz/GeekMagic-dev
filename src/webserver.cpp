@@ -401,6 +401,25 @@ void handleRoot() {
     server.send(200, "text/html", index_html);
 }
 
+// Return saved light settings
+void handleLightSettings() {
+    String json = "{";
+
+    json += "\"autoBrightness\":";
+    json += appSettings.autoBrightness ? "true" : "false";
+    json += ",";
+
+    json += "\"luxOff\":" + String(appSettings.luxOff, 1) + ",";
+    json += "\"luxOn\":" + String(appSettings.luxOn, 1) + ",";
+    json += "\"luxMax\":" + String(appSettings.luxMax, 1) + ",";
+    json += "\"brightnessMin\":" + String(appSettings.brightnessMin) + ",";
+    json += "\"brightnessMax\":" + String(appSettings.brightnessMax);
+
+    json += "}";
+
+    server.send(200, "application/json", json);
+}
+
 // Light settings page
 void handleLight() {
     const char* light_html = R"rawliteral(
@@ -526,6 +545,29 @@ button {
 </div>
 
 <script>
+
+function loadSettings() {
+    fetch('/light/settings')
+    .then(response => {
+        if (!response.ok) throw new Error('Loading failed');
+        return response.json();
+    })
+    .then(data => {
+        document.getElementById('autoBrightness').checked = data.autoBrightness;
+        document.getElementById('luxOff').value = data.luxOff;
+        document.getElementById('luxOn').value = data.luxOn;
+        document.getElementById('luxMax').value = data.luxMax;
+        document.getElementById('brightnessMin').value = data.brightnessMin;
+        document.getElementById('brightnessMax').value = data.brightnessMax;
+    })
+    .catch(error => {
+        document.getElementById('status').textContent =
+            'Unable to load settings';
+        console.error(error);
+    });
+}
+window.addEventListener('DOMContentLoaded', loadSettings);
+
 function saveSettings() {
     const data = {
         autoBrightness: document.getElementById('autoBrightness').checked,
@@ -561,6 +603,7 @@ void webserverInit() {
     // GET endpoints
     server.on("/", HTTP_GET, handleRoot);
     server.on("/light", HTTP_GET, handleLight);
+    server.on("/light/settings", HTTP_GET, handleLightSettings);
     server.on("/app.json", HTTP_GET, handleAppJson);
     server.on("/space.json", HTTP_GET, handleSpaceJson);
     server.on("/brt.json", HTTP_GET, handleBrtJson);
