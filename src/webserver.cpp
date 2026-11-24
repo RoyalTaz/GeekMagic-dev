@@ -424,6 +424,57 @@ void handleLightSettings() {
     server.send(200, "application/json", json);
 }
 
+void handleLightSave() {
+    if (!server.hasArg("plain")) {
+        server.send(400, "text/plain", "Missing request body");
+        return;
+    }
+
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, server.arg("plain"));
+
+    if (error) {
+        server.send(400, "text/plain", "Invalid JSON");
+        return;
+    }
+
+    bool autoBrightness = doc["autoBrightness"] | false;
+
+    float luxOff = doc["luxOff"] | -1.0f;
+    float luxOn = doc["luxOn"] | -1.0f;
+    float luxMax = doc["luxMax"] | -1.0f;
+
+    int brightnessMin = doc["brightnessMin"] | -1;
+    int brightnessMax = doc["brightnessMax"] | -1;
+
+    // Validate values
+    if (!isfinite(luxOff) || !isfinite(luxOn) ||
+        !isfinite(luxMax) || luxOff < 0 ||
+        luxOn <= luxOff || luxMax <= luxOn ||
+        brightnessMin < 0 || brightnessMin > 100 ||
+        brightnessMax < 0 || brightnessMax > 100 ||
+        brightnessMin > brightnessMax) {
+
+        server.send(400, "text/plain", "Invalid settings values");
+        return;
+    }
+
+    Settings newSettings = appSettings;
+
+    newSettings.autoBrightness = autoBrightness;
+    newSettings.luxOff = luxOff;
+    newSettings.luxOn = luxOn;
+    newSettings.luxMax = luxMax;
+    newSettings.brightnessMin = brightnessMin;
+    newSettings.brightnessMax = brightnessMax;
+
+    settingsSave(newSettings);
+
+    appSettings = newSettings;
+
+    server.send(200, "text/plain", "Settings saved successfully");
+}
+
 // Return VEML7700 sensor status and latest reading
 void handleLightSensor() {
     String json = "{";
@@ -715,6 +766,7 @@ void webserverInit() {
 
     // POST endpoints
     server.on("/api/update", HTTP_POST, handleApiUpdate);
+    server.on("/light/save", HTTP_POST, handleLightSave);
 
     // File upload
     server.on("/doUpload", HTTP_POST, handleUploadDone, handleFileUpload);
