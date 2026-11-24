@@ -19,6 +19,7 @@
 
 // Define NTP Client
 Settings appSettings;
+extern int currentBrightness;
 // VEML7700 ambient light sensor
 Adafruit_VEML7700 veml;
 bool vemlAvailable = false;
@@ -478,15 +479,73 @@ void setupFilesystem() {
 
 }
 
+void updateAutomaticBrightness() {
 
+    // Automatic mode disabled: leave manual brightness untouched
+    if (!appSettings.autoBrightness) {
+        return;
+    }
+
+    // Sensor unavailable or invalid reading
+    if (!vemlAvailable || currentLux < 0.0f) {
+        return;
+    }
+
+    static bool screenIsOn = true;
+
+    // Hysteresis: avoid repeated ON/OFF switching
+    if (screenIsOn && currentLux <= appSettings.luxOff) {
+        screenIsOn = false;
+        Serial.println(F("Automatic brightness: Screen OFF"));
+    }
+    else if (!screenIsOn && currentLux >= appSettings.luxOn) {
+        screenIsOn = true;
+        Serial.println(F("Automatic brightness: Screen ON"));
+    }
+
+    int targetBrightness = 0;
+
+    if (screenIsOn) {
+
+        if (currentLux <= appSettings.luxOn) {
+            targetBrightness = appSettings.brightnessMin;
+        }
+        else if (currentLux >= appSettings.luxMax) {
+            targetBrightness = appSettings.brightnessMax;
+        }
+        else {
+            float ratio =
+                (currentLux - appSettings.luxOn) /
+                (appSettings.luxMax - appSettings.luxOn);
+
+            targetBrightness = appSettings.brightnessMin +
+                ratio * (appSettings.brightnessMax -
+                         appSettings.brightnessMin);
+        }
+    }
+
+    targetBrightness = constrain(targetBrightness, 0, 100);
+
+    // Apply only when brightness changes
+    if (targetBrightness != currentBrightness) {
+
+        currentBrightness = targetBrightness;
+
+        displaySetBrightness(targetBrightness);
+
+        Serial.printf(
+            "Automatic brightness: %d%% (%.2f lux)\n",
+            targetBrightness,
+            currentLux
+        );
+    }
+}
 
 void setup() {
 
     Serial.begin(115200);
 
     delay(100);
-
-
 
     loggerInit();
 
@@ -495,7 +554,6 @@ void setup() {
     logPrint(F("SmartClock Starting..."));
 
     logPrintf("Firmware Version: %d", FIRMWARE_VERSION);
-
 
 
     // Initialize EEPROM and boot counter
@@ -837,6 +895,9 @@ if (vemlAvailable && millis() - lastLuxRead >= 2000) {
         Serial.println(F("Invalid VEML7700 reading"));
     }
 }
+
+// Update automatic screen brightness
+updateAutomaticBrightness();
     
     yield();
 }
