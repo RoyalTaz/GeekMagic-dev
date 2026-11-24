@@ -9,7 +9,7 @@
 
 // Semantic version string (replaced by GitHub Action during release builds)
 #ifndef FIRMWARE_VERSION_STRING
-#define FIRMWARE_VERSION_STRING "dev"
+#define FIRMWARE_VERSION_STRING "2.2.4 + Lux"
 #endif
 
 struct Settings {
