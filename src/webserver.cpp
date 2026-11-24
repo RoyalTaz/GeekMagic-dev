@@ -425,10 +425,6 @@ void handleLightSettings() {
 }
 
 void handleLightSave() {
-    Serial.println(F(">>> HANDLE LIGHT SAVE CALLED <<<"));
-    server.send(200, "text/plain", "DEBUG: handleLightSave reached");
-    return;
-    
     if (!server.hasArg("plain")) {
         server.send(400, "text/plain", "Missing request body");
         return;
@@ -459,6 +455,15 @@ void handleLightSave() {
     Serial.printf("brightnessMin: %d\n", brightnessMin);
     Serial.printf("brightnessMax: %d\n", brightnessMax);
     Serial.println(F("--------------------------------"));
+
+    if (doc["luxOff"].isNull() ||
+        doc["luxOn"].isNull() ||
+        doc["luxMax"].isNull() ||
+        doc["brightnessMin"].isNull() ||
+        doc["brightnessMax"].isNull()) {
+        server.send(400, "text/plain", "Missing settings values");
+        return;
+    }
     
     // Validate values
     if (!isfinite(luxOff) || !isfinite(luxOn) ||
@@ -731,11 +736,11 @@ window.addEventListener('DOMContentLoaded', () => {
 function saveSettings() {
     const data = {
         autoBrightness: document.getElementById('autoBrightness').checked,
-        luxOff: document.getElementById('luxOff').value,
-        luxOn: document.getElementById('luxOn').value,
-        luxMax: document.getElementById('luxMax').value,
-        brightnessMin: document.getElementById('brightnessMin').value,
-        brightnessMax: document.getElementById('brightnessMax').value
+        luxOff: Number(document.getElementById('luxOff').value),
+        luxOn: Number(document.getElementById('luxOn').value),
+        luxMax: Number(document.getElementById('luxMax').value),
+        brightnessMin: Number(document.getElementById('brightnessMin').value),
+        brightnessMax: Number(document.getElementById('brightnessMax').value)
     };
 
     fetch('/light/save', {
