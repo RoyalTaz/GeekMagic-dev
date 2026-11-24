@@ -17,6 +17,10 @@ char currentImage[DISPLAY_PATH_BUFFER_SIZE];
 
 extern Settings appSettings;
 
+// VEML7700 sensor data from main.cpp
+extern bool vemlAvailable;
+extern float currentLux;
+
 // File upload buffer
 File uploadFile;
 
@@ -420,6 +424,22 @@ void handleLightSettings() {
     server.send(200, "application/json", json);
 }
 
+// Return VEML7700 sensor status and latest reading
+void handleLightSensor() {
+    String json = "{";
+
+    json += "\"detected\":";
+    json += vemlAvailable ? "true" : "false";
+    json += ",";
+
+    json += "\"lux\":";
+    json += String(currentLux, 2);
+
+    json += "}";
+
+    server.send(200, "application/json", json);
+}
+
 // Light settings page
 void handleLight() {
     const char* light_html = R"rawliteral(
@@ -498,11 +518,49 @@ button {
     text-align: center;
     margin-top: 12px;
 }
+.sensor-box {
+    background: #f0f7ff;
+    border: 1px solid #cce3ff;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 22px;
+}
+.sensor-title {
+    font-weight: bold;
+    margin-bottom: 12px;
+    color: #007bff;
+}
+.sensor-value {
+    font-size: 28px;
+    font-weight: bold;
+    color: #333;
+}
+.sensor-status {
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+.sensor-ok {
+    color: #198754;
+}
+.sensor-error {
+    color: #dc3545;
+}
 </style>
 </head>
 <body>
 <div class="container">
 <h1>Light Settings</h1>
+
+<div class="sensor-box">
+    <div class="sensor-title">VEML7700 Ambient Light Sensor</div>
+    <div id="sensorStatus" class="sensor-status">
+        Checking sensor...
+    </div>
+    <div>
+        <span id="sensorLux" class="sensor-value">--</span>
+        <span>lux</span>
+    </div>
+</div>
 
 <div class="group toggle">
 <label for="autoBrightness">Automatic brightness</label>
@@ -568,6 +626,44 @@ function loadSettings() {
 }
 window.addEventListener('DOMContentLoaded', loadSettings);
 
+function updateSensor() {
+    fetch('/light/sensor')
+    .then(response => {
+        if (!response.ok) throw new Error('Sensor request failed');
+        return response.json();
+    })
+    .then(data => {
+        const status = document.getElementById('sensorStatus');
+        const lux = document.getElementById('sensorLux');
+
+        if (!data.detected) {
+            status.textContent = 'Sensor not detected';
+            status.className = 'sensor-status sensor-error';
+            lux.textContent = '--';
+            return;
+        }
+
+        status.textContent = 'Sensor detected';
+        status.className = 'sensor-status sensor-ok';
+
+        if (data.lux < 0) {
+            lux.textContent = '--';
+        } else {
+            lux.textContent = Number(data.lux).toFixed(2);
+        }
+    })
+    .catch(error => {
+        document.getElementById('sensorStatus').textContent =
+            'Communication error';
+        document.getElementById('sensorLux').textContent = '--';
+    });
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    updateSensor();
+    setInterval(updateSensor, 2000);
+});
+
 function saveSettings() {
     const data = {
         autoBrightness: document.getElementById('autoBrightness').checked,
@@ -603,6 +699,7 @@ void webserverInit() {
     // GET endpoints
     server.on("/", HTTP_GET, handleRoot);
     server.on("/light", HTTP_GET, handleLight);
+    server.on("/light/sensor", HTTP_GET, handleLightSensor);
     server.on("/light/settings", HTTP_GET, handleLightSettings);
     server.on("/app.json", HTTP_GET, handleAppJson);
     server.on("/space.json", HTTP_GET, handleSpaceJson);
