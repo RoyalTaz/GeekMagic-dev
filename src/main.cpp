@@ -24,6 +24,12 @@ Adafruit_VEML7700 veml;
 bool vemlAvailable = false;
 float currentLux = -1.0f;
 unsigned long lastLuxRead = 0;
+
+// Automatic brightness control
+bool screenIsOn = true;
+int automaticBrightness = -1;
+unsigned long lastBrightnessUpdate = 0;
+
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, NTP_SERVER, appSettings.gmtOffset);
 WiFiManager wifiManager;
@@ -819,18 +825,18 @@ void loop() {
         lastDisplayUpdate = millis();
     }
 
-    // Read ambient light every 2 seconds
-    if (vemlAvailable && millis() - lastLuxRead >= 2000) {
-        lastLuxRead = millis();
-        float lux = veml.readLux();
-        if (isfinite(lux) && lux >= 0.0f) {
-            currentLux = lux;
-            Serial.printf("Ambient light: %.2f lux\n", currentLux);
-        } else {
-            currentLux = -1.0f;
-            Serial.println(F("Invalid VEML7700 reading"));
-        }
+// Read ambient light every 2 seconds
+if (vemlAvailable && millis() - lastLuxRead >= 2000) {
+    lastLuxRead = millis();
+    float lux = veml.readLux();
+    if (isfinite(lux) && lux >= 0.0f) {
+        currentLux = lux;
+        Serial.printf("Ambient light: %.2f lux\n", currentLux);
+    } else {
+        currentLux = -1.0f;
+        Serial.println(F("Invalid VEML7700 reading"));
     }
+}
     
     yield();
 }
