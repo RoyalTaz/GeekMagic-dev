@@ -502,7 +502,7 @@ void handleLightSensor() {
     json += ",";
 
     json += "\"lux\":";
-    json += String(currentLux, 2);
+    json += String(currentLux, 0);
 
     json += "}";
 
