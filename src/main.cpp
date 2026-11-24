@@ -1,4 +1,6 @@
 #include <Arduino.h>
+#include <Wire.h>
+#include <Adafruit_VEML7700.h>
 #include <ESP8266WiFi.h>
 #include <WiFiManager.h>
 #include <ESP8266mDNS.h>
@@ -17,6 +19,10 @@
 
 // Define NTP Client
 Settings appSettings;
+// VEML7700 ambient light sensor
+Adafruit_VEML7700 veml;
+bool vemlAvailable = false;
+unsigned long lastLuxRead = 0;
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, NTP_SERVER, appSettings.gmtOffset);
 WiFiManager wifiManager;
@@ -593,6 +599,17 @@ void setup() {
 
     displaySetBrightness(appSettings.brightness);  // Restore saved brightness
 
+    // Initialize VEML7700 on GPIO4 (SDA) and GPIO12 (SCL)
+    Wire.begin(4, 12);
+
+    if (veml.begin(&Wire)) {
+        vemlAvailable = true;
+        Serial.println(F("VEML7700 détecté !"));
+    } else {
+        vemlAvailable = false;
+        Serial.println(F("VEML7700 non détecté !"));
+    }
+
     displayShowMessage(F("SmartClock\nInitializing..."));
 
     delay(2000);
@@ -802,5 +819,12 @@ void loop() {
         lastDisplayUpdate = millis();
     }
 
+    // Read ambient light every 2 seconds
+    if (vemlAvailable && millis() - lastLuxRead >= 2000) {
+        lastLuxRead = millis();
+        float lux = veml.readLux();
+        Serial.printf("Ambient light: %.2f lux\n", lux);
+    }
+    
     yield();
 }
