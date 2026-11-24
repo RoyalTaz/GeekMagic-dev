@@ -486,7 +486,7 @@ void updateAutomaticBrightness() {
     bool autoAvailable =
         appSettings.autoBrightness &&
         vemlAvailable &&
-        currentLux >= 0.0f;
+         >= 0.0f;
 
     // Manual brightness is the default target
     int targetBrightness = appSettings.brightness;
@@ -920,7 +920,7 @@ void loop() {
         float lux = veml.readLux();
         if (isfinite(lux) && lux >= 0.0f) {
             currentLux = lux;
-            Serial.printf("Ambient light: %.2f lux\n", currentLux);
+            Serial.printf("Ambient light: %.0f lux\n", currentLux);
         } else {
             currentLux = -1.0f;
             Serial.println(F("Invalid VEML7700 reading"));
