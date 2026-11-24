@@ -486,7 +486,7 @@ void updateAutomaticBrightness() {
     bool autoAvailable =
         appSettings.autoBrightness &&
         vemlAvailable &&
-         >= 0.0f;
+        currentLux >= 0.0f;
 
     // Manual brightness is the default target
     int targetBrightness = appSettings.brightness;
