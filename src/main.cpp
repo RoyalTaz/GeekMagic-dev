@@ -599,8 +599,7 @@ void setup() {
 
     displaySetBrightness(appSettings.brightness);  // Restore saved brightness
 
-    // Initialize VEML7700 on GPIO4 (SDA) and GPIO12 (SCL)
-    Wire.begin(4, 12);
+    Wire.begin(VEML7700_SDA, VEML7700_SCL);   // Initialize VEML7700 on GPIO4 (SDA) and GPIO12 (SCL)
 
     if (veml.begin(&Wire)) {
         vemlAvailable = true;
