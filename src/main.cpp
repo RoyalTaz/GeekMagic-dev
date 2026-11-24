@@ -482,14 +482,16 @@ void setupFilesystem() {
 void updateAutomaticBrightness() {
 
     static bool wasAutoMode = false;
-    static bool screenIsOn = true;
-    static unsigned long lastFadeStep = 0;
 
+    bool autoAvailable =
+        appSettings.autoBrightness &&
+        vemlAvailable &&
+        currentLux >= 0.0f;
+
+    // Manual brightness is the default target
     int targetBrightness = appSettings.brightness;
 
-    // Automatic mode is available only when the sensor is valid
-    if (appSettings.autoBrightness &&
-        vemlAvailable && currentLux >= 0.0f) {
+    if (autoAvailable) {
 
         // Initialize automatic mode
         if (!wasAutoMode) {
@@ -513,6 +515,7 @@ void updateAutomaticBrightness() {
         targetBrightness = 0;
 
         if (screenIsOn) {
+
             if (currentLux <= appSettings.luxOn) {
                 targetBrightness = appSettings.brightnessMin;
             }
@@ -531,6 +534,7 @@ void updateAutomaticBrightness() {
         }
     }
     else {
+
         // Return to manual brightness
         if (wasAutoMode) {
             Serial.println(F("Returning to manual brightness"));
@@ -541,8 +545,10 @@ void updateAutomaticBrightness() {
     targetBrightness = constrain(targetBrightness, 0, 100);
 
     // Progressive brightness transition
+    unsigned long now = millis();
+
     if (currentBrightness != targetBrightness &&
-        millis() - lastFadeStep >= 20) {
+        now - lastBrightnessUpdate >= 20) {
 
         if (currentBrightness < targetBrightness) {
             currentBrightness++;
@@ -552,9 +558,20 @@ void updateAutomaticBrightness() {
         }
 
         displaySetBrightness(currentBrightness);
-        lastFadeStep = millis();
+
+        lastBrightnessUpdate = now;
+
+        // Log when target brightness is reached
+        if (currentBrightness == targetBrightness && autoAvailable) {
+            Serial.printf(
+                "Automatic brightness: %d%% (%.2f lux)\n",
+                currentBrightness,
+                currentLux
+            );
+        }
     }
 }
+
 void setup() {
 
     Serial.begin(115200);
