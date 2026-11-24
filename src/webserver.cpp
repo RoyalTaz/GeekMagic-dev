@@ -425,6 +425,10 @@ void handleLightSettings() {
 }
 
 void handleLightSave() {
+    Serial.println(F(">>> HANDLE LIGHT SAVE CALLED <<<"));
+    server.send(200, "text/plain", "DEBUG: handleLightSave reached");
+    return;
+    
     if (!server.hasArg("plain")) {
         server.send(400, "text/plain", "Missing request body");
         return;
