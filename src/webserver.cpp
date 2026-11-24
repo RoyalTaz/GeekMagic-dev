@@ -447,6 +447,15 @@ void handleLightSave() {
     int brightnessMin = doc["brightnessMin"] | -1;
     int brightnessMax = doc["brightnessMax"] | -1;
 
+    Serial.println(F("----- LIGHT SETTINGS DEBUG -----"));
+    Serial.printf("autoBrightness: %d\n", autoBrightness);
+    Serial.printf("luxOff: %.2f\n", luxOff);
+    Serial.printf("luxOn: %.2f\n", luxOn);
+    Serial.printf("luxMax: %.2f\n", luxMax);
+    Serial.printf("brightnessMin: %d\n", brightnessMin);
+    Serial.printf("brightnessMax: %d\n", brightnessMax);
+    Serial.println(F("--------------------------------"));
+    
     // Validate values
     if (!isfinite(luxOff) || !isfinite(luxOn) ||
         !isfinite(luxMax) || luxOff < 0 ||
