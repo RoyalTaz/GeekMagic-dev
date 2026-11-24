@@ -11,7 +11,6 @@
 #include "webserver.h"
 #include "settings.h"
 #include "logger.h"
-#include "button.h"
 
 // NTP server (for NTPClient)
 #define NTP_SERVER "pool.ntp.org"
@@ -594,8 +593,6 @@ void setup() {
 
     displaySetBrightness(appSettings.brightness);  // Restore saved brightness
 
-    buttonInit();  // Initialize GPIO button
-
     displayShowMessage(F("SmartClock\nInitializing..."));
 
     delay(2000);
@@ -767,14 +764,6 @@ void loop() {
     // Monitor WiFi connection and handle failsafe mode
 
     monitorWiFi();
-
-    // Handle button presses
-    ButtonPress buttonPress = buttonUpdate();
-    if (buttonPress == BUTTON_SHORT) {
-        displayCycleNextPage();
-    } else if (buttonPress == BUTTON_LONG) {
-        displayToggleBacklight();
-    }
 
     // Only handle OTA and mDNS if not in failsafe mode
     if (!wifiFailsafeMode) {
