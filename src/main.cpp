@@ -483,78 +483,78 @@ void updateAutomaticBrightness() {
 
     static bool wasAutoMode = false;
     static bool screenIsOn = true;
+    static unsigned long lastFadeStep = 0;
 
-    // Return to manual brightness when automatic mode is disabled
-    // or when the sensor is unavailable
-    if (!appSettings.autoBrightness ||
-        !vemlAvailable || currentLux < 0.0f) {
+    int targetBrightness = appSettings.brightness;
 
+    // Automatic mode is available only when the sensor is valid
+    if (appSettings.autoBrightness &&
+        vemlAvailable && currentLux >= 0.0f) {
+
+        // Initialize automatic mode
+        if (!wasAutoMode) {
+            screenIsOn = currentLux > appSettings.luxOff;
+            wasAutoMode = true;
+
+            Serial.println(F("Automatic brightness enabled"));
+        }
+
+        // Hysteresis
+        if (screenIsOn && currentLux <= appSettings.luxOff) {
+            screenIsOn = false;
+            Serial.println(F("Automatic brightness: Screen OFF"));
+        }
+        else if (!screenIsOn && currentLux >= appSettings.luxOn) {
+            screenIsOn = true;
+            Serial.println(F("Automatic brightness: Screen ON"));
+        }
+
+        // Calculate target brightness
+        targetBrightness = 0;
+
+        if (screenIsOn) {
+            if (currentLux <= appSettings.luxOn) {
+                targetBrightness = appSettings.brightnessMin;
+            }
+            else if (currentLux >= appSettings.luxMax) {
+                targetBrightness = appSettings.brightnessMax;
+            }
+            else {
+                float ratio =
+                    (currentLux - appSettings.luxOn) /
+                    (appSettings.luxMax - appSettings.luxOn);
+
+                targetBrightness = appSettings.brightnessMin +
+                    ratio * (appSettings.brightnessMax -
+                             appSettings.brightnessMin);
+            }
+        }
+    }
+    else {
+        // Return to manual brightness
         if (wasAutoMode) {
-            currentBrightness = appSettings.brightness;
-            displaySetBrightness(currentBrightness);
-
             Serial.println(F("Returning to manual brightness"));
-
             wasAutoMode = false;
-        }
-
-        return;
-    }
-
-    // Initialize automatic mode
-    if (!wasAutoMode) {
-        screenIsOn = currentLux > appSettings.luxOff;
-        wasAutoMode = true;
-
-        Serial.println(F("Automatic brightness enabled"));
-    }
-
-    // Hysteresis
-    if (screenIsOn && currentLux <= appSettings.luxOff) {
-        screenIsOn = false;
-        Serial.println(F("Automatic brightness: Screen OFF"));
-    }
-    else if (!screenIsOn && currentLux >= appSettings.luxOn) {
-        screenIsOn = true;
-        Serial.println(F("Automatic brightness: Screen ON"));
-    }
-
-    int targetBrightness = 0;
-
-    if (screenIsOn) {
-
-        if (currentLux <= appSettings.luxOn) {
-            targetBrightness = appSettings.brightnessMin;
-        }
-        else if (currentLux >= appSettings.luxMax) {
-            targetBrightness = appSettings.brightnessMax;
-        }
-        else {
-            float ratio =
-                (currentLux - appSettings.luxOn) /
-                (appSettings.luxMax - appSettings.luxOn);
-
-            targetBrightness = appSettings.brightnessMin +
-                ratio * (appSettings.brightnessMax -
-                         appSettings.brightnessMin);
         }
     }
 
     targetBrightness = constrain(targetBrightness, 0, 100);
 
-    if (targetBrightness != currentBrightness) {
+    // Progressive brightness transition
+    if (currentBrightness != targetBrightness &&
+        millis() - lastFadeStep >= 20) {
 
-        currentBrightness = targetBrightness;
-        displaySetBrightness(targetBrightness);
+        if (currentBrightness < targetBrightness) {
+            currentBrightness++;
+        }
+        else {
+            currentBrightness--;
+        }
 
-        Serial.printf(
-            "Automatic brightness: %d%% (%.2f lux)\n",
-            targetBrightness,
-            currentLux
-        );
+        displaySetBrightness(currentBrightness);
+        lastFadeStep = millis();
     }
 }
-
 void setup() {
 
     Serial.begin(115200);
