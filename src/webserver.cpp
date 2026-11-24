@@ -401,9 +401,166 @@ void handleRoot() {
     server.send(200, "text/html", index_html);
 }
 
+// Light settings page
+void handleLight() {
+    const char* light_html = R"rawliteral(
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GeekMagic - Light Settings</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+}
+.container {
+    max-width: 500px;
+    margin: 20px auto;
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 3px 12px rgba(0,0,0,.08);
+}
+h1 {
+    text-align: center;
+    color: #007bff;
+}
+h2 {
+    font-size: 18px;
+    color: #007bff;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 8px;
+}
+.group {
+    margin: 18px 0;
+}
+label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 7px;
+}
+input[type=number] {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 11px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+.toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+button {
+    width: 100%;
+    padding: 13px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 12px;
+}
+.back {
+    display: block;
+    text-align: center;
+    margin-top: 18px;
+    color: #007bff;
+    text-decoration: none;
+}
+#status {
+    text-align: center;
+    margin-top: 12px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Light Settings</h1>
+
+<div class="group toggle">
+<label for="autoBrightness">Automatic brightness</label>
+<input type="checkbox" id="autoBrightness">
+</div>
+
+<h2>Ambient light thresholds</h2>
+
+<div class="group">
+<label for="luxOff">Screen OFF below (lux)</label>
+<input type="number" id="luxOff" min="0" step="0.1">
+</div>
+
+<div class="group">
+<label for="luxOn">Screen ON above (lux)</label>
+<input type="number" id="luxOn" min="0" step="0.1">
+</div>
+
+<div class="group">
+<label for="luxMax">Maximum brightness reached (lux)</label>
+<input type="number" id="luxMax" min="1" step="1">
+</div>
+
+<h2>Screen brightness limits</h2>
+
+<div class="group">
+<label for="brightnessMin">Minimum brightness (%)</label>
+<input type="number" id="brightnessMin" min="0" max="100">
+</div>
+
+<div class="group">
+<label for="brightnessMax">Maximum brightness (%)</label>
+<input type="number" id="brightnessMax" min="0" max="100">
+</div>
+
+<button onclick="saveSettings()">Save settings</button>
+<div id="status"></div>
+
+<a class="back" href="/">← Back to main page</a>
+</div>
+
+<script>
+function saveSettings() {
+    const data = {
+        autoBrightness: document.getElementById('autoBrightness').checked,
+        luxOff: document.getElementById('luxOff').value,
+        luxOn: document.getElementById('luxOn').value,
+        luxMax: document.getElementById('luxMax').value,
+        brightnessMin: document.getElementById('brightnessMin').value,
+        brightnessMax: document.getElementById('brightnessMax').value
+    };
+
+    fetch('/light/save', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(response => response.text())
+    .then(message => {
+        document.getElementById('status').textContent = message;
+    })
+    .catch(() => {
+        document.getElementById('status').textContent = 'Connection error';
+    });
+}
+</script>
+</body>
+</html>
+)rawliteral";
+
+    server.send(200, "text/html; charset=utf-8", light_html);
+}
+
 void webserverInit() {
     // GET endpoints
     server.on("/", HTTP_GET, handleRoot);
+    server.on("/light", HTTP_GET, handleLight);
     server.on("/app.json", HTTP_GET, handleAppJson);
     server.on("/space.json", HTTP_GET, handleSpaceJson);
     server.on("/brt.json", HTTP_GET, handleBrtJson);
